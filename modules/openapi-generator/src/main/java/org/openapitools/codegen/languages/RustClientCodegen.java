@@ -209,7 +209,7 @@ public class RustClientCodegen extends DefaultCodegen implements CodegenConfig {
                 CodegenModel cm = (CodegenModel) mo.get("model");
                 if (cm.discriminator != null) {
                     List<Object> discriminatorVars = new ArrayList<>();
-                    for(CodegenDiscriminator.MappedModel mappedModel: cm.discriminator.getMappedModels()) {
+                    for (CodegenDiscriminator.MappedModel mappedModel : cm.discriminator.getMappedModels()) {
                         CodegenModel model = allModels.get(mappedModel.getModelName());
                         Map<String, Object> mas = new HashMap<>();
                         mas.put("modelName", camelize(mappedModel.getModelName()));
@@ -253,7 +253,7 @@ public class RustClientCodegen extends DefaultCodegen implements CodegenConfig {
         additionalProperties.put("apiDocPath", apiDocPath);
         additionalProperties.put("modelDocPath", modelDocPath);
 
-        if ( HYPER_LIBRARY.equals(getLibrary())){
+        if (HYPER_LIBRARY.equals(getLibrary())) {
             additionalProperties.put(HYPER_LIBRARY, "true");
         } else if (REQWEST_LIBRARY.equals(getLibrary())) {
             additionalProperties.put(REQWEST_LIBRARY, "true");
@@ -446,7 +446,7 @@ public class RustClientCodegen extends DefaultCodegen implements CodegenConfig {
 
     @Override
     public String toOperationId(String operationId) {
-        String sanitizedOperationId = sanitizeName(operationId);
+        String sanitizedOperationId = sanitizeName(stripJavaClassName(operationId));
 
         // method name cannot use reserved keyword, e.g. return
         if (isReservedWord(sanitizedOperationId)) {
@@ -454,7 +454,22 @@ public class RustClientCodegen extends DefaultCodegen implements CodegenConfig {
             sanitizedOperationId = "call_" + sanitizedOperationId;
         }
 
-        return StringUtils.underscore(sanitizedOperationId);
+        return tryRemoveEndVerb(StringUtils.underscore(sanitizedOperationId));
+        //return StringUtils.underscore(sanitizedOperationId);
+    }
+
+    private String tryRemoveEndVerb(String underscore) {
+        String[] parts = underscore.split("_");
+        if (parts[0].equals(parts[parts.length - 1])) {
+            return String.join("_", Arrays.copyOfRange(parts, 0, parts.length - 1));
+        }
+        return underscore;
+
+    }
+
+    private static String stripJavaClassName(String operationId) {
+        String[] parts = operationId.split("\\.");
+        return parts[parts.length - 1];
     }
 
     @Override
